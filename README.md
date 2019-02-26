@@ -15,12 +15,12 @@ io_scene_bsp is a Blender 2.8 addon for importing Quake engine BSP files.
 4. Navigate to the zip file and click 'Install Add-on from File'
 
 ## Contributing
-Have a bug fix or a new feature you'd like to see? Send it our way! Please make sure you create an issue that addresses your fix/feature so we can discuss the contribution.
+Have a bug fix or a new feature you'd like to see? Send it on over! Please make sure you create an issue that addresses your fix/feature so we can discuss the contribution.
 
 1. Fork this repo!
 2. Create your feature branch: `git checkout -b features/fix-bug`
 3. Commit your changes: `git commit -m 'Fixes the following...'`
-4. Push the branch: `git push origin fix-bug`
+4. Push the branch: `git push origin features/fix-bug`
 5. Submit a pull request.
 6. Create an [issue](https://github.com/joshuaskelly/io_scene_bsp/issues/new).
 
