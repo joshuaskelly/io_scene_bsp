@@ -4,21 +4,19 @@ if 'perfmon' in locals():
     il.reload(nodes)
     il.reload(perfmon)
     il.reload(utils)
-    print('io_scene_bsp.import_bsp: reload ready.')
+    # print('io_scene_bsp.import_bsp: reload ready.')
 
 else:
     from . import api
     from . import nodes
     from . import perfmon
+    from . import utils
 
 import os
 
 import bpy
 import bmesh
 from mathutils import Matrix, Vector
-
-from vgio.quake.bsp import Bsp, is_bspfile
-from vgio.quake import map as Map
 
 from .perfmon import PerformanceMonitor
 from .utils import datablock_lookup
@@ -91,7 +89,7 @@ def load(operator,
          use_brush_entities=True,
          use_point_entities=True):
 
-    if not is_bspfile(filepath):
+    if not api.is_bspfile(filepath):
         operator.report(
             {'ERROR'},
             '{} not a recognized BSP file'.format(filepath)
@@ -105,9 +103,7 @@ def load(operator,
     performance_monitor.push_scope()
     performance_monitor.step('Loading bsp file...')
 
-    bsp_file = Bsp.open(filepath)
-    bsp_file.close()
-    bsp = api.Bsp(bsp_file)
+    bsp = api.Bsp(filepath)
 
     map_name = os.path.basename(filepath)
 
@@ -154,8 +150,8 @@ def load(operator,
     performance_monitor.step('Creating images...')
 
     # Create images
-    for i, image in enumerate(bsp_file.images()):
-        miptex = bsp_file.miptextures[i]
+    for i, image in enumerate(bsp.images):
+        miptex = bsp.miptextures[i]
 
         if miptex:
             create_image(miptex.name, image)
@@ -163,21 +159,19 @@ def load(operator,
     performance_monitor.step('Creating materials...')
 
     # Create materials
-    for i, image in enumerate(bsp_file.images()):
-        miptex = bsp_file.miptextures[i]
+    for i, image in enumerate(bsp.images):
+        miptex = bsp.miptextures[i]
 
         if miptex:
             create_material(miptex.name, bpy.data.images[miptex.name])
 
     global_matrix = Matrix.Scale(global_scale, 4)
-    entities = []
 
     # Create point entities
     if use_point_entities:
         performance_monitor.step('Creating point entities...')
-        entities = Map.loads(bsp_file.entities)
 
-        for entity in [_ for _ in entities if hasattr(_, 'origin')]:
+        for entity in [_ for _ in bsp.entities if hasattr(_, 'origin')]:
             vec = tuple(map(float, entity.origin.split(' ')))
             ob = bpy.data.objects.new(entity.classname + '.000', None)
             ob.location = Vector(vec) * global_scale
@@ -190,10 +184,7 @@ def load(operator,
 
     performance_monitor.step('Creating brush entities...')
 
-    if use_brush_entities and not entities:
-        entities = Map.loads(bsp_file.entities)
-
-    brush_entities = {int(m.model.strip('*')): m.classname for m in entities if hasattr(m, 'model') and m.model.startswith('*')}
+    brush_entities = {int(m.model.strip('*')): m.classname for m in bsp.entities if hasattr(m, 'model') and m.model.startswith('*')}
     brush_entities[0] = 'worldspawn'
 
     # Create mesh objects
