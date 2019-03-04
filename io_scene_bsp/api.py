@@ -28,6 +28,7 @@ def create_image(name, image_data):
         pixels = list(map(lambda x: x / 255, image_data.pixels))
         image.pixels[:] = pixels
         image.update()
+        image.pack(as_png=True)
 
     return image
 
@@ -118,6 +119,14 @@ class Face:
 
         return tuple(((dot(v, s) + ds) / w, -(dot(v, t) + dt) / h) for v in self.vertices)
 
+    @property
+    @lru_cache(maxsize=1)
+    def texture_name(self):
+        texture_info = self._bsp.texture_infos[self._face.texture_info]
+        miptex = self._bsp.miptextures[texture_info.miptexture_number]
+
+        return miptex.name
+
 
 class Model:
     def __init__(self, bsp, model):
@@ -146,105 +155,3 @@ class Bsp:
     def models(self):
         for model in self._bsp.models:
             yield Model(self._bsp, model)
-
-
-def create_mesh_object(name, bsp, model, matrix):
-    mesh = bpy.data.meshes.new(name)
-    bm = bmesh.new()
-
-    mesh_vertices = []
-    mesh_uvs = []
-    mesh_faces = []
-    mesh_face_miptexes = []
-    applied_materials = []
-
-    # Process BSP Faces
-    faces = bsp.faces[model.first_face:model.first_face + model.number_of_faces]
-    for face in faces:
-        texture_info = bsp.texture_infos[face.texture_info]
-        miptex = bsp.miptextures[texture_info.miptexture_number]
-
-        if not miptex:
-            continue
-
-        if miptex.name not in applied_materials:
-            applied_materials.append(miptex.name)
-
-        s = texture_info.s
-        ds = texture_info.s_offset
-        t = texture_info.t
-        dt = texture_info.t_offset
-
-        w = miptex.width
-        h = miptex.height
-
-        edges = bsp.surf_edges[face.first_edge:face.first_edge + face.number_of_edges]
-
-        verts = []
-        for edge in edges:
-            v = bsp.edges[abs(edge)].vertexes
-
-            # Flip edges with negative ids
-            v0, v1 = v if edge > 0 else reversed(v)
-
-            if len(verts) == 0:
-                verts.append(v0)
-
-            if v1 != verts[0]:
-                verts.append(v1)
-
-        # Ignore degenerate faces
-        if len(verts) < 3:
-            continue
-
-        # Convert Vertexes to three-tuples and reverse their order
-        verts = [tuple(bsp.vertexes[i][:]) for i in reversed(verts)]
-
-        # Convert ST coordinate space to UV coordinate space
-        uvs = [((dot(v, s) + ds) / w, -(dot(v, t) + dt) / h) for v in verts]
-
-        # Determine indices of vertices added
-        start_index = len(mesh_vertices)
-        stop_index = start_index + len(verts)
-        vert_indices = list(range(start_index, stop_index))
-
-        mesh_vertices += verts
-        mesh_uvs += uvs
-        mesh_faces.append(vert_indices)
-        mesh_face_miptexes.append(miptex.name)
-
-    # Create Blender vertices
-    for vertexes in mesh_vertices:
-        v = bm.verts.new(vertexes)
-        v.co = matrix @ v.co
-
-    bm.verts.ensure_lookup_table()
-    uv_layer = bm.loops.layers.uv.new()
-
-    # Create Blender faces
-    for face_index, face in enumerate(mesh_faces):
-        bverts = [bm.verts[i] for i in face]
-
-        try:
-            bface = bm.faces.new(bverts)
-            material_name = mesh_face_miptexes[face_index]
-            bface.material_index = applied_materials.index(material_name)
-
-            uvs = [mesh_uvs[i] for i in face]
-
-            for uv, loop in zip(uvs, bface.loops):
-                loop[uv_layer].uv = uv
-
-        except Exception as e:
-            print(e)
-
-    bm.faces.ensure_lookup_table()
-    bm.to_mesh(mesh)
-    bm.free()
-
-    ob = bpy.data.objects.new(name, mesh)
-
-    for material_name in applied_materials:
-        ob.data.materials.append(bpy.data.materials[material_name])
-
-    return ob

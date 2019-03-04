@@ -2,12 +2,12 @@ if 'bpy' in locals():
     import importlib as il
     il.reload(import_bsp)
     il.reload(export_bsp)
-    print('io_scene_bsp: reload ready')
+    # print('io_scene_bsp.operators: reload ready')
 
 else:
     from . import import_bsp
     from . import export_bsp
-    print('io_scene_bsp: ready')
+
 
 import bpy
 

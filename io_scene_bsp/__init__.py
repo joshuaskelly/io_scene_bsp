@@ -13,6 +13,15 @@ bl_info = {
 __version__ = '.'.join(map(str, bl_info['version']))
 
 
+if 'operators' in locals():
+    import importlib as il
+    il.reload(operators)
+    print('io_scene_bsp: reload ready')
+
+else:
+    print('io_scene_bsp: ready')
+
+
 def register():
     from .operators import register
     register()
