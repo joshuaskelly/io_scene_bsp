@@ -200,6 +200,12 @@ def load(operator,
         bm = bmesh.new()
         uv_layer = bm.loops.layers.uv.new()
 
+        def new_vertex(vertex):
+            bv = bm.verts.new(vertex)
+            bv.co = global_matrix @ bv.co
+
+            return bv
+
         def process_vertices(vertices):
             """Helper function to create Blender vertices from a sequence of
             tuples.
@@ -210,13 +216,7 @@ def load(operator,
             Returns:
                 A sequence of Blender vertices
             """
-            result = []
-            for vertex in vertices:
-                bv = bm.verts.new(vertex)
-                bv.co = global_matrix @ bv.co
-                result.append(bv)
-
-            return result
+            return [new_vertex(v) for v in vertices]
 
         def get_material_index(name):
             """Get the material slot index of the given material name. If the

@@ -4,7 +4,9 @@ from vgio.quake.bsp import Bsp as BspFile
 from vgio.quake.bsp import is_bspfile
 from vgio.quake import map as Map
 
-from .utils import dot
+
+def dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 
 class Face:
