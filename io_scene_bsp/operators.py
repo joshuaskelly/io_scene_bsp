@@ -60,6 +60,12 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         default=True
     )
 
+    load_lightmap: BoolProperty(
+        name='Load Lightmap Data',
+        description='Load lightmap data',
+        default=False
+    )
+
     def execute(self, context):
         keywords = self.as_keywords(ignore=("filter_glob",))
         from . import import_bsp
@@ -72,6 +78,7 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         layout.prop(self, 'use_worldspawn_entity')
         layout.prop(self, 'use_brush_entities')
         layout.prop(self, 'use_point_entities')
+        # layout.prop(self, 'load_lightmap')
 
 
 class ExportBSP(bpy.types.Operator, ExportHelper):
@@ -92,12 +99,14 @@ class ExportBSP(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         from . import export_bsp
 
-        keywords = self.as_keywords(ignore=('axis_forward',
-                                            'axis_up',
-                                            'global_scale',
-                                            'check_existing',
-                                            'filter_glob',
-                                            ))
+        ignore_attrs = (
+            'axis_forward',
+            'axis_up',
+            'global_scale',
+            'check_existing',
+            'filter_glob'
+        )
+        keywords = self.as_keywords(ignore=ignore_attrs)
 
         return export_bsp.save(self, context, **keywords)
 

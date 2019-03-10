@@ -16,6 +16,8 @@ import os
 
 import bpy
 import bmesh
+import numpy
+
 from mathutils import Matrix, Vector
 
 from .perfmon import PerformanceMonitor
@@ -31,9 +33,7 @@ def create_image(name, image_data):
 
     else:
         image = bpy.data.images.new(name, image_data.width, image_data.height)
-        pixels = list(map(lambda x: x / 255, image_data.pixels))
-        image.pixels[:] = pixels
-        image.update()
+        image.pixels[:] = [p / 255 for p in image_data.pixels]
         image.pack(as_png=True)
 
     return image
@@ -87,7 +87,8 @@ def load(operator,
          global_scale=1.0,
          use_worldspawn_entity=True,
          use_brush_entities=True,
-         use_point_entities=True):
+         use_point_entities=True,
+         load_lightmap=False):
 
     if not api.is_bspfile(filepath):
         operator.report(
@@ -147,23 +148,24 @@ def load(operator,
 
             return subcollection
 
-    performance_monitor.step('Creating images...')
+    if use_worldspawn_entity or use_brush_entities:
+        performance_monitor.step('Creating images...')
 
-    # Create images
-    for i, image in enumerate(bsp.images):
-        miptex = bsp.miptextures[i]
+        # Create images
+        for i, image in enumerate(bsp.images):
+            miptex = bsp.miptextures[i]
 
-        if miptex:
-            create_image(miptex.name, image)
+            if miptex:
+                create_image(miptex.name, image)
 
-    performance_monitor.step('Creating materials...')
+        performance_monitor.step('Creating materials...')
 
-    # Create materials
-    for i, image in enumerate(bsp.images):
-        miptex = bsp.miptextures[i]
+        # Create materials
+        for i, image in enumerate(bsp.images):
+            miptex = bsp.miptextures[i]
 
-        if miptex:
-            create_material(miptex.name, bpy.data.images[miptex.name])
+            if miptex:
+                create_material(miptex.name, bpy.data.images[miptex.name])
 
     global_matrix = Matrix.Scale(global_scale, 4)
 
@@ -186,6 +188,8 @@ def load(operator,
 
     brush_entities = {int(m.model.strip('*')): m.classname for m in bsp.entities if hasattr(m, 'model') and m.model.startswith('*')}
     brush_entities[0] = 'worldspawn'
+
+    mesh_objects = []
 
     # Create mesh objects
     for model_index, model in enumerate(bsp.models):
@@ -245,13 +249,73 @@ def load(operator,
             for uv, loop in zip(face.uvs, bface.loops):
                 loop[uv_layer].uv = uv
 
-        bm.faces.ensure_lookup_table()
         bm.to_mesh(ob.data)
         bm.free()
 
         entity_subcollection = get_subcollection(brush_collection, ob.name)
         entity_subcollection.objects.link(ob)
         ob.select_set(True)
+
+        mesh_objects.append((model, ob))
+
+    if load_lightmap:
+        from . import block_packer as atlas_packer
+
+        performance_monitor.step('Creating lightmaps...')
+
+        for model, ob in mesh_objects:
+            bm = bmesh.new()
+            bm.from_mesh(ob.data)
+            lightmap_layer = bm.loops.layers.uv.new('LightMap')
+
+            individual_lightmaps = []
+
+            for face, bface in zip(model.faces, bm.faces):
+                if not face.vertices:
+                    continue
+
+                individual_lightmaps.append(face.lightmap_image)
+
+            atlas_size, atlas_offset = atlas_packer.pack(individual_lightmaps)
+
+            lightmap_image = bpy.data.images.new(f'{ob.name}.lightmap', atlas_size[0], atlas_size[1])
+            pixels = numpy.array(lightmap_image.pixels[:])
+            w, h = atlas_size
+            pixels = pixels.reshape((h, w * 4))
+
+            for lm, offset in zip(individual_lightmaps, atlas_offset):
+                if not offset:
+                    continue
+
+                size, lightmap_pixels = lm
+                lightmap_pixels = numpy.array(lightmap_pixels)
+                lightmap_pixels = lightmap_pixels.reshape((size[1], size[0] * 4))
+                x, y = offset
+                pixels[y:y + size[1], x * 4:x * 4 + (size[0] * 4)] = lightmap_pixels
+
+            pixels = pixels.reshape(len(lightmap_image.pixels))
+            lightmap_image.pixels[:] = pixels
+
+            for face, bface, offset, lm in zip(model.faces, bm.faces, atlas_offset, individual_lightmaps):
+                if not face.vertices:
+                    continue
+
+                ox, oy = offset
+                ox /= atlas_size[0]
+                oy /= atlas_size[1]
+                offset = ox, oy
+
+                for uv, loop in zip(face.lightmap_uvs, bface.loops):
+                    u, v = uv
+                    u /= atlas_size[0]
+                    v /= atlas_size[1]
+                    u += offset[0]
+                    v += offset[1]
+
+                    loop[lightmap_layer].uv = u, v
+
+            bm.to_mesh(ob.data)
+            bm.free()
 
     performance_monitor.pop_scope()
     performance_monitor.pop_scope('Import finished.')
