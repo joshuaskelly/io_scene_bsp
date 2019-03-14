@@ -1,3 +1,6 @@
+[![io_scene_bsp](.media/header.png)](https://github.com/JoshuaSkelly/io_scene_bsp)
+*ad_sepulcher.bsp by G1ftmacher and Sock.*
+
 # io_scene_bsp
 
 [![Blender 2.8](https://img.shields.io/badge/blender-2.8-%23f4792b.svg)]() [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)]()
