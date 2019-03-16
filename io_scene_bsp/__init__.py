@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Quake engine BSP format',
     'author': 'Joshua Skelton',
-    'version': (1, 0, 1),
+    'version': (1, 0, 2),
     'blender': (2, 80, 0),
     'location': 'File > Import-Export',
     'description': 'Load a Quake engine BSP file.',
@@ -23,6 +23,9 @@ else:
 
 
 def register():
+    from .patch import ensure_modules_dir_on_path
+    ensure_modules_dir_on_path()
+
     from .operators import register
     register()
 

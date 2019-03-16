@@ -49,7 +49,7 @@ def run():
         pass
 
     zip_entries = gather_files('io_scene_bsp')
-    zip_entries += gather_files(os.path.dirname(vgio.__file__), 'modules')
+    zip_entries += gather_files(os.path.dirname(vgio.__file__), 'io_scene_bsp\modules')
 
     filename = f'io_scene_bsp-{io_scene_bsp.__version__}.zip'
     filepath = os.path.abspath(os.path.join('dist', filename))
