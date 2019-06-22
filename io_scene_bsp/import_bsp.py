@@ -34,7 +34,7 @@ def create_image(name, image_data):
     else:
         image = bpy.data.images.new(name, image_data.width, image_data.height)
         image.pixels[:] = [p / 255 for p in image_data.pixels]
-        image.pack(as_png=True)
+        image.pack()
 
     return image
 
