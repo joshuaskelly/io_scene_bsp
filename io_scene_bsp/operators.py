@@ -66,6 +66,13 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         default=False
     )
 
+    use_principled_shader: BoolProperty(
+        name='Use Principled BSDF Shader',
+        description='Use Principled BSDF shader for material. Otherwise a '
+                    'custom node graph will be created',
+        default=True
+    )
+
     def execute(self, context):
         keywords = self.as_keywords(ignore=("filter_glob",))
         from . import import_bsp
@@ -78,6 +85,7 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         layout.prop(self, 'use_worldspawn_entity')
         layout.prop(self, 'use_brush_entities')
         layout.prop(self, 'use_point_entities')
+        layout.prop(self, 'use_principled_shader')
         # layout.prop(self, 'load_lightmap')
 
 

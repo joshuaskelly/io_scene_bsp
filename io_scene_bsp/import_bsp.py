@@ -40,7 +40,7 @@ def create_image(name, image_data):
 
 
 @datablock_lookup('materials')
-def create_material(name, image):
+def create_material(name, image, use_principled_shader=True):
     # Create new material
     material = bpy.data.materials.new(name)
     material.diffuse_color = 1, 1, 1, 1
@@ -59,23 +59,27 @@ def create_material(name, image):
     texture_node.location = 0, 0
 
     # Create a bsdf node
-    bsdf_node = material.node_tree.nodes.new('ShaderNodeGroup')
-
-    if name.startswith('sky') or name.startswith('*'):
-        bsdf_node.node_tree = nodes.unlit_bsdf()
-
-    elif name.startswith('{'):
-        bsdf_node.node_tree = nodes.unlit_alpha_mask_bsdf()
-        material.blend_method = 'CLIP'
+    if use_principled_shader:
+        bsdf_node = material.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
 
     else:
-        bsdf_node.node_tree = nodes.lightmapped_bsdf()
+        bsdf_node = material.node_tree.nodes.new('ShaderNodeGroup')
+
+        if name.startswith('sky') or name.startswith('*'):
+            bsdf_node.node_tree = nodes.unlit_bsdf()
+
+        elif name.startswith('{'):
+            bsdf_node.node_tree = nodes.unlit_alpha_mask_bsdf()
+            material.blend_method = 'CLIP'
+
+        else:
+            bsdf_node.node_tree = nodes.lightmapped_bsdf()
 
     bsdf_node.location = 300, 0
     material.node_tree.links.new(texture_node.outputs[0], bsdf_node.inputs[0])
 
     output_node = material.node_tree.nodes.get('Material Output')
-    output_node.location = 500, 0
+    output_node.location = 600, 0
     material.node_tree.links.new(bsdf_node.outputs[0], output_node.inputs[0])
 
     return material
@@ -88,7 +92,8 @@ def load(operator,
          use_worldspawn_entity=True,
          use_brush_entities=True,
          use_point_entities=True,
-         load_lightmap=False):
+         load_lightmap=False,
+         use_principled_shader=True):
 
     if not api.is_bspfile(filepath):
         operator.report(
@@ -165,7 +170,11 @@ def load(operator,
             miptex = bsp.miptextures[i]
 
             if miptex:
-                create_material(miptex.name, bpy.data.images[miptex.name])
+                create_material(
+                    miptex.name,
+                    bpy.data.images[miptex.name],
+                    use_principled_shader=use_principled_shader
+                )
 
     global_matrix = Matrix.Scale(global_scale, 4)
 
