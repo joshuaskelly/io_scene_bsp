@@ -3,7 +3,7 @@
 
 # io_scene_bsp
 
-[![Blender 2.80](https://img.shields.io/badge/blender-2.8-%23f4792b.svg)]() [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)]()
+[![Blender 2.80](https://img.shields.io/badge/blender-2.8-%23f4792b.svg)]() [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)]() [![Discord](https://img.shields.io/badge/discord-chat-7289DA.svg)](https://discord.gg/KvwmdXA)
 
 io_scene_bsp is a Blender 2.80 addon for importing Quake engine BSP files.
 
