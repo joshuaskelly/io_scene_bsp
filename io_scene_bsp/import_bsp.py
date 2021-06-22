@@ -202,7 +202,7 @@ def load(operator,
 
         for entity in [_ for _ in bsp.entities if hasattr(_, 'origin')]:
             spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
-            if import_spawnflags & spawnflags:
+            if not(import_spawnflags & spawnflags):
                 continue
 
             vec = tuple(map(float, entity.origin.split(' ')))
@@ -237,7 +237,7 @@ def load(operator,
             continue
 
         spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
-        if import_spawnflags & spawnflags:
+        if not (import_spawnflags & spawnflags):
             continue
 
         name = entity.classname
