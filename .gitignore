@@ -8,8 +8,9 @@
 # Ignore OS artifacts
 .DS_Store
 
-# Ignore pyenv artifacts
+# Ignore virtual environments
 .python-version
+.venv
 
 # No compiled Python artifacts
 *.pyc
