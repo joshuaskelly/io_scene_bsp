@@ -118,7 +118,7 @@ class Face:
         texture_info = self._bsp_file.texture_infos[self._face.texture_info]
         miptex = self._bsp_file.miptextures[texture_info.miptexture_number]
 
-        return miptex.name
+        return miptex.name if miptex else ''
 
 
 class Model:
