@@ -14,6 +14,7 @@ import bpy
 from bpy.props import (
     StringProperty,
     BoolProperty,
+    EnumProperty,
     FloatProperty
 )
 
@@ -73,6 +74,23 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         default=True
     )
 
+    skill: EnumProperty(
+        name="Skill",
+        options={'ENUM_FLAG'},
+        items=(('EASY', "Easy", ""),
+               ('NORMAL', "Normal", ""),
+               ('HARD', "Hard", ""),
+               ),
+        description="What difficulty of entities to import",
+        default={'EASY', 'NORMAL', 'HARD'},
+    )
+
+    use_deathmatch_entities: BoolProperty(
+        name='Import Deathmatch Only Entities',
+        description='Import deathmatch only entities',
+        default=True
+    )
+
     def execute(self, context):
         keywords = self.as_keywords(ignore=("filter_glob",))
         from . import import_bsp
@@ -80,13 +98,7 @@ class ImportBSP(bpy.types.Operator, ImportHelper):
         return import_bsp.load(self, context, **keywords)
 
     def draw(self, context):
-        layout = self.layout
-        layout.prop(self, 'global_scale')
-        layout.prop(self, 'use_worldspawn_entity')
-        layout.prop(self, 'use_brush_entities')
-        layout.prop(self, 'use_point_entities')
-        layout.prop(self, 'use_principled_shader')
-        # layout.prop(self, 'load_lightmap')
+        pass
 
 
 class ExportBSP(bpy.types.Operator, ExportHelper):

@@ -16,6 +16,7 @@ __version__ = '.'.join(map(str, bl_info['version']))
 if 'operators' in locals():
     import importlib as il
     il.reload(operators)
+    il.reload(panels)
     print('io_scene_bsp: reload ready')
 
 else:
@@ -26,15 +27,20 @@ def register():
     from .patch import ensure_modules_dir_on_path
     ensure_modules_dir_on_path()
 
-    from .operators import register
-    register()
+    from . import operators
+    operators.register()
+
+    from . import panels
+    panels.register()
 
 
 def unregister():
-    from .operators import unregister
-    unregister()
+    from . import operators
+    operators.unregister()
+
+    from . import panels
+    panels.unregister()
 
 
 if __name__ == '__main__':
-    from .operators import register
     register()

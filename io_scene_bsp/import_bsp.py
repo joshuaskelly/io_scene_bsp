@@ -95,7 +95,9 @@ def load(operator,
          use_brush_entities=True,
          use_point_entities=True,
          load_lightmap=False,
-         use_principled_shader=True):
+         use_principled_shader=True,
+         skill={'EASY', 'NORMAL', 'HARD'},
+         use_deathmatch_entities=True):
 
     if not api.is_bspfile(filepath):
         operator.report(
@@ -114,6 +116,20 @@ def load(operator,
     bsp = api.Bsp(filepath)
 
     map_name = os.path.basename(filepath)
+
+    import_spawnflags = 0
+
+    if 'EASY' not in skill:
+        import_spawnflags |= 256
+
+    if 'NORMAL' not in skill:
+        import_spawnflags |= 512
+
+    if 'HARD' not in skill:
+        import_spawnflags |= 1024
+
+    if not use_deathmatch_entities:
+        import_spawnflags |= 2048
 
     root_collection = bpy.data.collections.new(map_name)
     bpy.context.scene.collection.children.link(root_collection)
@@ -185,6 +201,10 @@ def load(operator,
         performance_monitor.step('Creating point entities...')
 
         for entity in [_ for _ in bsp.entities if hasattr(_, 'origin')]:
+            spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
+            if import_spawnflags & spawnflags:
+                continue
+
             vec = tuple(map(float, entity.origin.split(' ')))
             ob = bpy.data.objects.new(entity.classname + '.000', None)
             ob.location = Vector(vec) * global_scale
@@ -199,8 +219,8 @@ def load(operator,
 
     performance_monitor.step('Creating brush entities...')
 
-    brush_entities = {int(m.model.strip('*')): m.classname for m in bsp.entities if hasattr(m, 'model') and m.model.startswith('*')}
-    brush_entities[0] = 'worldspawn'
+    brush_entities = {int(e.model.strip('*')): e for e in bsp.entities if hasattr(e, 'model') and e.model.startswith('*')}
+    brush_entities[0] = bsp.entities[0]
 
     mesh_objects = []
 
@@ -212,7 +232,15 @@ def load(operator,
         if model_index > 0 and not use_brush_entities:
             break
 
-        name = brush_entities.get(model_index) or 'brush'
+        entity = brush_entities.get(model_index)
+        if not entity:
+            continue
+
+        spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
+        if import_spawnflags & spawnflags:
+            continue
+
+        name = entity.classname
         ob = bpy.data.objects.new(name, bpy.data.meshes.new(name))
         bm = bmesh.new()
         uv_layer = bm.loops.layers.uv.new()
