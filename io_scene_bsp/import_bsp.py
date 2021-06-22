@@ -14,6 +14,8 @@ else:
 
 import os
 
+from math import radians
+
 import bpy
 import bmesh
 import numpy
@@ -188,6 +190,8 @@ def load(operator,
             ob.location = Vector(vec) * global_scale
             ob.empty_display_size = 16 * global_scale
             ob.empty_display_type = 'CUBE'
+            z_rotation = radians(float(entity.angle) if hasattr(entity, 'angle') else 0)
+            ob.rotation_euler = 0, 0, z_rotation
 
             entity_subcollection = get_subcollection(entity_collection, entity.classname)
             entity_subcollection.objects.link(ob)
