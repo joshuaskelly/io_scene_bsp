@@ -95,9 +95,7 @@ def load(operator,
          use_brush_entities=True,
          use_point_entities=True,
          load_lightmap=False,
-         use_principled_shader=True,
-         skill={'EASY', 'NORMAL', 'HARD'},
-         use_deathmatch_entities=True):
+         use_principled_shader=True):
 
     if not api.is_bspfile(filepath):
         operator.report(
@@ -116,20 +114,6 @@ def load(operator,
     bsp = api.Bsp(filepath)
 
     map_name = os.path.basename(filepath)
-
-    import_spawnflags = 0
-
-    if 'EASY' not in skill:
-        import_spawnflags |= 256
-
-    if 'NORMAL' not in skill:
-        import_spawnflags |= 512
-
-    if 'HARD' not in skill:
-        import_spawnflags |= 1024
-
-    if not use_deathmatch_entities:
-        import_spawnflags |= 2048
 
     root_collection = bpy.data.collections.new(map_name)
     bpy.context.scene.collection.children.link(root_collection)
@@ -201,10 +185,6 @@ def load(operator,
         performance_monitor.step('Creating point entities...')
 
         for entity in [_ for _ in bsp.entities if hasattr(_, 'origin')]:
-            spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
-            if not(import_spawnflags & spawnflags):
-                continue
-
             vec = tuple(map(float, entity.origin.split(' ')))
             ob = bpy.data.objects.new(entity.classname + '.000', None)
             ob.location = Vector(vec) * global_scale
@@ -234,10 +214,6 @@ def load(operator,
 
         entity = brush_entities.get(model_index)
         if not entity:
-            continue
-
-        spawnflags = int(entity.spawnflags) if hasattr(entity, 'spawnflags') else 0
-        if not (import_spawnflags & spawnflags):
             continue
 
         name = entity.classname

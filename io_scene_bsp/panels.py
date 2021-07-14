@@ -27,10 +27,6 @@ class BSP_PT_import_include(bpy.types.Panel):
         sublayout.prop(operator, 'use_brush_entities', text='Brush')
         sublayout.prop(operator, 'use_point_entities', text='Point')
 
-        layout.column().prop(operator, 'skill', text='Skill')
-
-        layout.prop(operator, 'use_deathmatch_entities', text='Deathmatch')
-
 
 class BSP_PT_import_transform(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
