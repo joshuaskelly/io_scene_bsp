@@ -1,7 +1,7 @@
 bl_info = {
     'name': 'Quake engine BSP format',
     'author': 'Joshua Skelton',
-    'version': (1, 1, 0),
+    'version': (1, 1, 1),
     'blender': (2, 80, 0),
     'location': 'File > Import-Export',
     'description': 'Load a Quake engine BSP file.',
