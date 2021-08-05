@@ -5,6 +5,9 @@
 /vs
 *.pyproj
 
+# Ignore dependencies
+**/modules
+
 # Ignore OS artifacts
 .DS_Store
 
