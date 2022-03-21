@@ -27,6 +27,8 @@ class BSP_PT_import_include(bpy.types.Panel):
         sublayout.prop(operator, 'use_brush_entities', text='Brush')
         sublayout.prop(operator, 'use_point_entities', text='Point')
 
+        layout.prop(operator, 'load_lightmap', text='Lightmaps')
+
 
 class BSP_PT_import_transform(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'

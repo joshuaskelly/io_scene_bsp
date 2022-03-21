@@ -4,10 +4,12 @@ if 'perfmon' in locals():
     il.reload(nodes)
     il.reload(perfmon)
     il.reload(utils)
+    il.reload(lightmap)
     # print('io_scene_bsp.import_bsp: reload ready.')
 
 else:
     from . import api
+    from . import lightmap
     from . import nodes
     from . import perfmon
     from . import utils
@@ -276,56 +278,41 @@ def load(operator,
         mesh_objects.append((model, ob))
 
     if load_lightmap:
-        from . import block_packer as atlas_packer
-
         performance_monitor.step('Creating lightmaps...')
+
+        pixels, offsets = lightmap.build(bsp._bsp_file)
+        lightmap_image = bpy.data.images.new(
+            'lightmap',
+            pixels.shape[0],
+            pixels.shape[1]
+        )
+        lightmap_image.pixels[:] = [a for p in pixels.flatten() / 255.0 for a in (p, p, p, 1)]
+
+        size = pixels.shape
 
         for model, ob in mesh_objects:
             bm = bmesh.new()
             bm.from_mesh(ob.data)
             lightmap_layer = bm.loops.layers.uv.new('LightMap')
 
-            individual_lightmaps = []
+            oo = [offsets[i] for i in range(model._model.first_face, model._model.first_face + model._model.number_of_faces)]
 
-            for face, bface in zip(model.faces, bm.faces):
+            for face, bface, offset in zip(model.faces, bm.faces, oo):
                 if not face.vertices:
                     continue
 
-                individual_lightmaps.append(face.lightmap_image)
-
-            atlas_size, atlas_offset = atlas_packer.pack(individual_lightmaps)
-
-            lightmap_image = bpy.data.images.new(f'{ob.name}.lightmap', atlas_size[0], atlas_size[1])
-            pixels = numpy.array(lightmap_image.pixels[:])
-            w, h = atlas_size
-            pixels = pixels.reshape((h, w * 4))
-
-            for lm, offset in zip(individual_lightmaps, atlas_offset):
                 if not offset:
                     continue
 
-                size, lightmap_pixels = lm
-                lightmap_pixels = numpy.array(lightmap_pixels)
-                lightmap_pixels = lightmap_pixels.reshape((size[1], size[0] * 4))
-                x, y = offset
-                pixels[y:y + size[1], x * 4:x * 4 + (size[0] * 4)] = lightmap_pixels
-
-            pixels = pixels.reshape(len(lightmap_image.pixels))
-            lightmap_image.pixels[:] = pixels
-
-            for face, bface, offset, lm in zip(model.faces, bm.faces, atlas_offset, individual_lightmaps):
-                if not face.vertices:
-                    continue
-
                 ox, oy = offset
-                ox /= atlas_size[0]
-                oy /= atlas_size[1]
+                ox /= size[0]
+                oy /= size[1]
                 offset = ox, oy
 
                 for uv, loop in zip(face.lightmap_uvs, bface.loops):
                     u, v = uv
-                    u /= atlas_size[0]
-                    v /= atlas_size[1]
+                    u /= size[0]
+                    v /= size[1]
                     u += offset[0]
                     v += offset[1]
 
